@@ -6,6 +6,13 @@
       "name": "Test User",
       "email": "testuser2@example.com",
       "password": "Password123hashed"
+    },
+    {
+      "_id": "6a3202973169cd6a1e866d15",
+      "createdAt": "2026-06-17T02:12:39.931Z",
+      "name": "ben",
+      "email": "benst@gmail.com",
+      "password": "stoksey@123hashed"
     }
   ],
   "urls": [
@@ -28,6 +35,16 @@
       "clickCount": 1,
       "createdAt": "2026-06-16T16:05:37.696Z",
       "_id": "6a317451fbb4622d779a97d0"
+    },
+    {
+      "userId": "6a3202973169cd6a1e866d15",
+      "originalUrl": "https://www.youtube.com/watch?v=UDOIFBU543k",
+      "shortCode": "ani",
+      "customAlias": "ani",
+      "qrCode": "data:image/png;base64,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",
+      "clickCount": 1,
+      "createdAt": "2026-06-17T02:14:16.944Z",
+      "_id": "6a3202f80a32336ae6acedbd"
     }
   ],
   "visits": [
@@ -50,6 +67,16 @@
       "device": "Desktop",
       "country": "United Kingdom",
       "city": "London"
+    },
+    {
+      "_id": "6a32030b484486a6bd14146c",
+      "timestamp": "2026-06-17T02:14:35.699Z",
+      "shortCode": "ani",
+      "ipAddress": "127.0.0.1",
+      "browser": "Chrome",
+      "device": "Desktop",
+      "country": "Germany",
+      "city": "Berlin"
     }
   ]
 }
