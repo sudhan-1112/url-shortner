@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard';
 import AnalyticsPage from './pages/AnalyticsPage';
 import PublicStatsPage from './pages/PublicStatsPage';
 import ProfilePage from './pages/ProfilePage';
+import DomainsPage from './pages/DomainsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
@@ -37,6 +38,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/domains"
+                  element={
+                    <ProtectedRoute>
+                      <DomainsPage />
                     </ProtectedRoute>
                   }
                 />

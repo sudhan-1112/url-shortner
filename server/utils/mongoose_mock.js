@@ -10,6 +10,7 @@ module.exports = () => {
   let users = [];
   let urls = [];
   let visits = [];
+  let domains = [];
 
   // Helper to deep clone or return raw objects
   const clone = (obj) => JSON.parse(JSON.stringify(obj));
@@ -24,6 +25,7 @@ module.exports = () => {
           users = data.users || [];
           urls = data.urls || [];
           visits = data.visits || [];
+          domains = data.domains || [];
         }
       }
     } catch (err) {
@@ -34,7 +36,7 @@ module.exports = () => {
   // Save data to disk
   const saveData = () => {
     try {
-      const data = { users, urls, visits };
+      const data = { users, urls, visits, domains };
       fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf8');
     } catch (err) {
       console.error('[MOCK DB] Failed to save persistent data:', err.message);
@@ -53,10 +55,25 @@ module.exports = () => {
   require('../models/User');
   require('../models/URL');
   require('../models/Visit');
+  require('../models/Domain');
 
   const User = mongoose.model('User');
   const URLModel = mongoose.model('URL');
   const Visit = mongoose.model('Visit');
+  const Domain = mongoose.model('Domain');
+
+  // Define save for Domain model
+  Domain.prototype.save = async function() {
+    const data = this.toObject();
+    const idx = domains.findIndex(d => d._id.toString() === this._id.toString());
+    if (idx !== -1) {
+      domains[idx] = clone(data);
+    } else {
+      domains.push(clone(data));
+    }
+    saveData();
+    return this;
+  };
 
   // Define save for URL model
   URLModel.prototype.save = async function() {
@@ -125,12 +142,42 @@ module.exports = () => {
     return queryResult;
   };
 
+  User.deleteOne = async function(query) {
+    const idx = users.findIndex(u => u._id.toString() === query._id.toString());
+    if (idx !== -1) {
+      users.splice(idx, 1);
+      saveData();
+    }
+    return { acknowledged: true, deletedCount: idx !== -1 ? 1 : 0 };
+  };
+
   // ---------------- MOCK URL STATIC METHODS ----------------
   URLModel.findOne = async function(query) {
     let match = null;
     
     if (query._id && query.userId) {
       match = urls.find(u => u._id.toString() === query._id.toString() && u.userId.toString() === query.userId.toString());
+    } else if (query.$and) {
+      // Find default domains combining domain and code
+      const domainPart = query.$and.find(q => q.$or && q.$or.some(i => i.domain !== undefined));
+      const codePart = query.$and.find(q => q.$or && q.$or.some(i => i.shortCode !== undefined || i.customAlias !== undefined));
+      
+      if (domainPart && codePart) {
+        const codes = codePart.$or.map(c => c.shortCode || c.customAlias);
+        match = urls.find(u => {
+          const matchesCode = codes.includes(u.shortCode) || codes.includes(u.customAlias);
+          const matchesDomain = !u.domain;
+          return matchesCode && matchesDomain;
+        });
+      }
+    } else if (query.domain) {
+      const qDomain = query.domain.toLowerCase();
+      const codes = query.$or ? query.$or.map(q => q.shortCode || q.customAlias) : [];
+      match = urls.find(u => {
+        const matchesDomain = (u.domain || '').toLowerCase() === qDomain;
+        const matchesCode = codes.includes(u.shortCode) || codes.includes(u.customAlias);
+        return matchesDomain && matchesCode;
+      });
     } else if (query.$or) {
       // Find by shortCode or customAlias
       const codes = query.$or.map(q => q.shortCode || q.customAlias);
@@ -316,5 +363,61 @@ module.exports = () => {
     }
 
     return [];
+  };
+
+  // ---------------- MOCK DOMAIN STATIC METHODS ----------------
+  Domain.create = async function(data) {
+    const id = new mongoose.Types.ObjectId();
+    const newDomain = {
+      _id: id,
+      isActive: true,
+      createdAt: new Date(),
+      ...data
+    };
+    domains.push(clone(newDomain));
+    saveData();
+    return new Domain(newDomain);
+  };
+
+  Domain.find = function(query) {
+    let list = domains.filter(d => d.userId.toString() === query.userId.toString());
+    
+    const queryResult = {
+      sort: function() { return this; },
+      exec: async function() {
+        return list.map(item => new Domain(item));
+      }
+    };
+    queryResult.then = (resolve) => resolve(queryResult.exec());
+    return queryResult;
+  };
+
+  Domain.findOne = async function(query) {
+    let match = domains.find(d => {
+      for (const key in query) {
+        if (query[key] === undefined) continue;
+        if (key === '_id' || key === 'userId') {
+          if (d[key].toString() !== query[key].toString()) return false;
+        } else {
+          if (d[key] !== query[key]) return false;
+        }
+      }
+      return true;
+    });
+    if (!match) return null;
+    return new Domain(match);
+  };
+
+  Domain.deleteOne = async function(query) {
+    const idx = domains.findIndex(d => d._id.toString() === query._id.toString());
+    if (idx !== -1) {
+      domains.splice(idx, 1);
+      saveData();
+    }
+    return { acknowledged: true, deletedCount: idx !== -1 ? 1 : 0 };
+  };
+
+  Domain.updateMany = async function(query, update) {
+    return { acknowledged: true };
   };
 };

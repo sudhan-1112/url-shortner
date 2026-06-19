@@ -85,10 +85,12 @@ const Dashboard = () => {
     setPagination({ ...pagination, page: 1 });
   };
 
-  const handleCopy = (id, shortCode) => {
-    const baseUrl = window.location.origin.includes('localhost')
-      ? 'http://localhost:5000'
-      : window.location.origin;
+  const handleCopy = (id, shortCode, domain) => {
+    const baseUrl = domain
+      ? `http://${domain}`
+      : (window.location.origin.includes('localhost')
+        ? 'http://localhost:5000'
+        : window.location.origin);
     const shortLink = `${baseUrl}/${shortCode}`;
     
     navigator.clipboard.writeText(shortLink);
@@ -276,7 +278,12 @@ const Dashboard = () => {
               <tbody className="divide-y divide-slate-200/50 dark:divide-slate-800/50 text-slate-800 dark:text-slate-300">
                 {urls.map((url) => {
                   const displayShortCode = url.shortCode;
-                  const redirectUrl = `http://localhost:5000/${displayShortCode}`;
+                  const defaultBaseUrl = window.location.origin.includes('localhost')
+                    ? 'http://localhost:5000'
+                    : window.location.origin;
+                  const redirectUrl = url.domain
+                    ? `http://${url.domain}/${displayShortCode}`
+                    : `${defaultBaseUrl}/${displayShortCode}`;
                   
                   return (
                     <tr key={url._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition">
@@ -302,11 +309,11 @@ const Dashboard = () => {
                             rel="noopener noreferrer"
                             className="font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1 group"
                           >
-                            {displayShortCode}
+                            {url.domain ? `${url.domain}/${displayShortCode}` : displayShortCode}
                             <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5 shrink-0 opacity-0 group-hover:opacity-100 transition" />
                           </a>
                           <button
-                            onClick={() => handleCopy(url._id, displayShortCode)}
+                            onClick={() => handleCopy(url._id, displayShortCode, url.domain)}
                             className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition"
                             title="Copy link"
                           >

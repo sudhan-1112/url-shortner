@@ -6,6 +6,11 @@ const URLSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  domain: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   originalUrl: {
     type: String,
     required: [true, 'Please add a destination URL'],

@@ -42,7 +42,7 @@ const generateUniqueCode = async () => {
 // @access  Private
 exports.createUrl = async (req, res, next) => {
   try {
-    const { originalUrl, customAlias, expiryDate } = req.body;
+    const { originalUrl, customAlias, expiryDate, domain } = req.body;
 
     if (!originalUrl) {
       return res.status(400).json({ success: false, message: 'Please add a destination URL' });
@@ -50,6 +50,20 @@ exports.createUrl = async (req, res, next) => {
 
     if (!isValidUrl(originalUrl)) {
       return res.status(400).json({ success: false, message: 'Invalid URL format. Must start with http:// or https://' });
+    }
+
+    let domainValue = '';
+    if (domain) {
+      const Domain = require('../models/Domain');
+      const userDomain = await Domain.findOne({
+        userId: req.user.id,
+        domainName: domain.toLowerCase().trim(),
+        isActive: true
+      });
+      if (!userDomain) {
+        return res.status(400).json({ success: false, message: 'Invalid or inactive custom domain' });
+      }
+      domainValue = userDomain.domainName;
     }
 
     let shortCode;
@@ -74,7 +88,7 @@ exports.createUrl = async (req, res, next) => {
     }
 
     // Generate short link for QR code
-    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+    const baseUrl = domainValue ? `http://${domainValue}` : (process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`);
     const shortLink = `${baseUrl}/${shortCode}`;
 
     // Generate QR Code base64 data URL
@@ -93,6 +107,7 @@ exports.createUrl = async (req, res, next) => {
 
     const urlData = {
       userId: req.user.id,
+      domain: domainValue,
       originalUrl,
       shortCode,
       qrCode: qrCodeBase64
@@ -281,10 +296,11 @@ exports.bulkUploadCsv = async (req, res, next) => {
     const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
 
     for (const record of records) {
-      // Find case-insensitive keys: originalUrl, customAlias, expiryDate
+      // Find case-insensitive keys: originalUrl, customAlias, expiryDate, domain
       const originalUrl = record.originalUrl || record.originalurl || record.URL || record.url;
       const customAlias = record.customAlias || record.customalias || record.alias || record.Alias;
       const expiry = record.expiryDate || record.expirydate || record.expiry || record.Expiry;
+      const domain = record.domain || record.Domain || record.customDomain || record.customdomain || '';
 
       if (!originalUrl || !isValidUrl(originalUrl)) {
         skippedList.push({
@@ -292,6 +308,25 @@ exports.bulkUploadCsv = async (req, res, next) => {
           reason: 'Invalid or missing destination URL'
         });
         continue;
+      }
+
+      let domainValue = '';
+      if (domain) {
+        const Domain = require('../models/Domain');
+        const userDomain = await Domain.findOne({
+          userId: req.user.id,
+          domainName: domain.toLowerCase().trim(),
+          isActive: true
+        });
+        if (userDomain) {
+          domainValue = userDomain.domainName;
+        } else {
+          skippedList.push({
+            row: record,
+            reason: `Invalid or inactive custom domain: '${domain}'`
+          });
+          continue;
+        }
       }
 
       let shortCode;
@@ -323,7 +358,8 @@ exports.bulkUploadCsv = async (req, res, next) => {
       }
 
       // Generate QR Code
-      const shortLink = `${baseUrl}/${shortCode}`;
+      const actualBaseUrl = domainValue ? `http://${domainValue}` : baseUrl;
+      const shortLink = `${actualBaseUrl}/${shortCode}`;
       let qrCodeBase64 = '';
       try {
         qrCodeBase64 = await QRCode.toDataURL(shortLink, {
@@ -339,6 +375,7 @@ exports.bulkUploadCsv = async (req, res, next) => {
 
       const urlData = {
         userId: req.user.id,
+        domain: domainValue,
         originalUrl,
         shortCode,
         qrCode: qrCodeBase64

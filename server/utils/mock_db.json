@@ -13,6 +13,20 @@
       "name": "ben",
       "email": "benst@gmail.com",
       "password": "stoksey@123hashed"
+    },
+    {
+      "_id": "6a34a5bd9aadd6aaaaca0eed",
+      "createdAt": "2026-06-19T02:13:17.412Z",
+      "name": "Test Domain User",
+      "email": "testdomain@example.com",
+      "password": "password123hashed"
+    },
+    {
+      "_id": "6a34a5d0d254afe31bd2731a",
+      "createdAt": "2026-06-19T02:13:36.419Z",
+      "name": "Test Domain User",
+      "email": "testdomain@example.com",
+      "password": "password123hashed"
     }
   ],
   "urls": [
@@ -45,6 +59,15 @@
       "clickCount": 1,
       "createdAt": "2026-06-17T02:14:16.944Z",
       "_id": "6a3202f80a32336ae6acedbd"
+    },
+    {
+      "_id": "6a34a5bd9aadd6aaaaca0ef1",
+      "clickCount": 0,
+      "createdAt": "2026-06-19T02:13:17.418Z",
+      "userId": "6a34a5bd9aadd6aaaaca0eed",
+      "domain": "test.brand.com",
+      "originalUrl": "https://google.com/search?q=custom+domains",
+      "shortCode": "gsearch"
     }
   ],
   "visits": [
@@ -77,6 +100,15 @@
       "device": "Desktop",
       "country": "Germany",
       "city": "Berlin"
+    }
+  ],
+  "domains": [
+    {
+      "userId": "6a34a5bd9aadd6aaaaca0eed",
+      "domainName": "test.brand.com",
+      "isActive": false,
+      "createdAt": "2026-06-19T02:13:17.417Z",
+      "_id": "6a34a5bd9aadd6aaaaca0eef"
     }
   ]
 }

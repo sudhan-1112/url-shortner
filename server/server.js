@@ -10,6 +10,7 @@ const connectDB = require('./config/db');
 const errorHandler = require('./middleware/error');
 const URL = require('./models/URL');
 const Visit = require('./models/Visit');
+const Domain = require('./models/Domain');
 
 // Connect to Database
 connectDB();
@@ -60,6 +61,7 @@ app.use('/api/', limiter);
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/urls', require('./routes/urls'));
 app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/domains', require('./routes/domains'));
 
 // Asynchronous background visit logger
 const logVisit = async (shortCode, req) => {
@@ -130,9 +132,39 @@ app.get('/:shortCode', async (req, res, next) => {
       return res.status(204).end();
     }
 
-    const url = await URL.findOne({
-      $or: [{ shortCode }, { customAlias: shortCode }]
-    });
+    const host = req.headers.host || '';
+    const hostname = host.split(':')[0].toLowerCase();
+    const baseHost = new global.URL(process.env.BASE_URL || 'http://localhost:5000').hostname.toLowerCase();
+
+    let url;
+
+    // Resolve domain matching
+    if (hostname === baseHost || hostname === 'localhost' || hostname === '127.0.0.1') {
+      url = await URL.findOne({
+        $and: [
+          {
+            $or: [
+              { domain: '' },
+              { domain: { $exists: false } }
+            ]
+          },
+          {
+            $or: [
+              { shortCode },
+              { customAlias: shortCode }
+            ]
+          }
+        ]
+      });
+    } else {
+      const activeDomain = await Domain.findOne({ domainName: hostname, isActive: true });
+      if (activeDomain) {
+        url = await URL.findOne({
+          domain: hostname,
+          $or: [{ shortCode }, { customAlias: shortCode }]
+        });
+      }
+    }
 
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 

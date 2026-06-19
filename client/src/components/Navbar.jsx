@@ -50,6 +50,12 @@ const Navbar = () => {
                   Dashboard
                 </Link>
                 <Link
+                  to="/domains"
+                  className="text-sm font-medium text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400"
+                >
+                  Domains
+                </Link>
+                <Link
                   to="/profile"
                   className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400"
                 >
@@ -121,6 +127,13 @@ const Navbar = () => {
                 className="block text-base font-medium text-slate-600 dark:text-slate-300"
               >
                 Dashboard
+              </Link>
+              <Link
+                to="/domains"
+                onClick={() => setIsOpen(false)}
+                className="block text-base font-medium text-slate-600 dark:text-slate-300"
+              >
+                Domains
               </Link>
               <Link
                 to="/profile"

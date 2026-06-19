@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import API from '../services/api';
 import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
@@ -9,8 +9,27 @@ const CreateUrlModal = ({ isOpen, onClose, onSuccess }) => {
     expiryDate: ''
   });
   
+  const [domains, setDomains] = useState([]);
+  const [selectedDomain, setSelectedDomain] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchDomains();
+    }
+  }, [isOpen]);
+
+  const fetchDomains = async () => {
+    try {
+      const res = await API.get('/domains');
+      if (res.data.success) {
+        setDomains(res.data.data.filter(d => d.isActive));
+      }
+    } catch (err) {
+      console.error('Failed to fetch active domains', err);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -33,10 +52,14 @@ const CreateUrlModal = ({ isOpen, onClose, onSuccess }) => {
     setError('');
 
     try {
-      const res = await API.post('/urls', formData);
+      const res = await API.post('/urls', {
+        ...formData,
+        domain: selectedDomain
+      });
       if (res.data.success) {
         onSuccess(res.data.data);
         setFormData({ originalUrl: '', customAlias: '', expiryDate: '' });
+        setSelectedDomain('');
         onClose();
       }
     } catch (err) {
@@ -83,12 +106,32 @@ const CreateUrlModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
 
           <div>
+            <label htmlFor="domain" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Short Link Domain
+            </label>
+            <select
+              id="domain"
+              name="domain"
+              value={selectedDomain}
+              onChange={(e) => setSelectedDomain(e.target.value)}
+              className="block w-full rounded-xl border border-slate-200 bg-white py-2.5 px-3 text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 dark:text-white text-sm"
+            >
+              <option value="">Default Domain (ShortyPro default)</option>
+              {domains.map((dom) => (
+                <option key={dom._id} value={dom.domainName}>
+                  {dom.domainName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label htmlFor="customAlias" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Custom Alias <span className="text-xs text-slate-500">(Optional)</span>
             </label>
             <div className="flex rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-50 dark:bg-slate-950">
               <span className="inline-flex items-center px-3 border-r border-slate-200 dark:border-slate-800 text-slate-500 text-sm select-none">
-                shorty.com/
+                {selectedDomain ? `${selectedDomain}/` : 'shorty.com/'}
               </span>
               <input
                 id="customAlias"
